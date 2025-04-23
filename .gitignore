@@ -1,0 +1,59 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+
+
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+local_settings.py
+.env
+
+# Static and media files
+staticfiles/
+static/
+media/
+
+# VSCode
+.vscode/
+
+# Virtualenv
+venv/
+env/
+ENV/
+
+# macOS
+.DS_Store
+
+# Docker
+*.pid
+*.seed
+*.swp
+docker-compose.override.yml
+
+# Pytest / Coverage
+htmlcov/
+.coverage
+.cache/
+.tox/
+
+# Migrations (optional, only if you don't want to track them)
+# **/migrations/
+
+# mypy
+.mypy_cache/
+
+# Pycharm
+.idea/
+
+# pip-tools
+*.txt~  # temporary files from pip-compile
