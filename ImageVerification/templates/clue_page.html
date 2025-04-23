@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakujo</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .clue-section {
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .clue-label {
+            color: #ff3a3a;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 58, 58, 0.5);
+        }
+        
+        .clue-symbol {
+            font-size: 2rem;
+            margin: 20px 0;
+        }
+        
+        .clue-text {
+            line-height: 1.6;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .upload-section {
+            margin: 40px 0;
+        }
+        
+        .upload-label {
+            background-color: #333;
+            color: #e0e0e0;
+            padding: 16px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .upload-label::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #333, #444);
+            z-index: -1;
+        }
+        
+        .upload-label:hover {
+            background-color: #444;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        .upload-label:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .upload-label.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .upload-icon {
+            margin-right: 12px;
+            width: 24px;
+            height: 24px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .upload-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 18px;
+            height: 2px;
+            background-color: #e0e0e0;
+            transform: translate(-50%, -50%);
+        }
+        
+        .upload-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 18px;
+            background-color: #e0e0e0;
+            transform: translate(-50%, -50%);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .response-area {
+            margin-top: 30px;
+            min-height: 50px;
+            color: #aaa;
+            font-style: italic;
+            transition: color 0.3s;
+        }
+        
+        .response-area.active {
+            color: #ff3a3a;
+            font-style: normal;
+        }
+        
+        .response-area.success {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+        
+        .secret-code {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.8em;
+            letter-spacing: 5px;
+            color: #4CAF50;
+            display: none;
+        }
+        
+        .secret-code.revealed {
+            display: block;
+            animation: revealCode 1s ease-in-out;
+        }
+        
+        @keyframes revealCode {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background-color: #222;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.5s;
+        }
+        
+        @keyframes modalIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+            animation: modalIn 0.4s ease-out;
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .modal-content {
+            margin-bottom: 30px;
+        }
+        
+        .cryptic-message {
+            font-style: italic;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        
+        .success-message {
+            color: #4CAF50;
+        }
+        
+        .error-message {
+            color: #ff3a3a;
+        }
+        
+        .code-display {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            font-family: monospace;
+            font-size: 2.5rem;
+            letter-spacing: 8px;
+            border-radius: 6px;
+            margin: 25px 0;
+            color: #4CAF50;
+        }
+        
+        .modal-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        .modal-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-button.error {
+            background-color: #ff3a3a;
+        }
+        
+        .modal-button.error:hover {
+            background-color: #e03535;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            color: #777;
+            cursor: pointer;
+            transition: color 0.3s;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .modal-close:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Loading animation */
+        .loader {
+            display: none;
+            margin: 20px auto;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 58, 58, 0.2);
+            border-radius: 50%;
+            border-top-color: #ff3a3a;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader.active {
+            display: block;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .clue-label {
+                font-size: 1.8rem;
+            }
+            
+            .clue-text {
+                font-size: 1rem;
+                line-height: 1.5;
+            }
+            
+            .modal {
+                padding: 20px;
+                width: calc(100% - 40px);
+            }
+            
+            .code-display {
+                font-size: 2rem;
+                letter-spacing: 5px;
+            }
+            
+            .cryptic-message {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .upload-label {
+                padding: 12px 20px;
+            }
+            
+            .modal-button {
+                font-size: 0.9rem;
+                padding: 10px 20px;
+            }
+            
+            .code-display {
+                font-size: 1.8rem;
+                letter-spacing: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="subtitle">
+                <span>Atm</span>
+                <span>Eclipse</span>
+            </div>
+            <h1 class="title">SAKUJO</h1>
+        </header>
+        
+        <div class="clue-section">
+            <div class="clue-label">CLUE</div>
+            <div class="clue-symbol">大</div>
+            <!-- QR code-like symbol would go here -->
+            
+            <div class="clue-text">
+                <p>In a shadowed moment, your world shattered. 
+                Returning home, a figure emerged, demanding 
+                more than possessions. Despite your father's 
+                attempts to reason, violence erupted. The 
+                assailant's blade pierced his chest, 
+                extinguishing his light before your eyes.</p>
+                
+                <p>Alone, you stood in the darkness, your father's 
+                life slipping away. The weight of loss and 
+                vengeance consumed you. Swearing an oath, 
+                you embarked on a relentless pursuit, driven 
+                by grief and fury. Each day, the memory of 
+                that night fueled your quest for justice.</p>
+                
+                <p>Where knowledge rests in stone's embrace,
+                Three paths unite, a sacred space,
+                Listen to whispers in timeworn halls,
+                Beneath the moon's soft, where prayers enthrall.</p>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                <label for="imageUpload" class="upload-label" id="uploadLabel">
+                    <span class="upload-icon"></span>
+                    Submit Your Answer
+                </label>
+                <input type="file" id="imageUpload" name="image" class="file-input" accept="image/*">
+            </form>
+            
+            <div class="loader" id="loader"></div>
+            <div class="response-area" id="responseArea">Upload an image to verify your answer</div>
+            <div class="secret-code" id="secretCode"></div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal">
+            <div class="modal-close" id="successModalClose">×</div>
+            <h2 class="modal-title success-message">You've Found It</h2>
+            <div class="modal-content">
+                <p class="cryptic-message">"The first step on your path to vengeance is complete. What was hidden is now revealed. The code will guide you to the next challenge."</p>
+                <div class="code-display" id="modalCode">1783</div>
+            </div>
+            <button class="modal-button" id="continueButton">Continue Your Journey</button>
+        </div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal">
+            <div class="modal-close" id="errorModalClose">×</div>
+            <h2 class="modal-title error-message">Incorrect Answer</h2>
+            <div class="modal-content">
+                <p class="cryptic-message">"The path to justice is shrouded in darkness. This is not what you seek. Look deeper, for the truth hides in plain sight."</p>
+            </div>
+            <button class="modal-button error" id="tryAgainButton">Try Again</button>
+        </div>
+    </div>
+    
+    <script>
+        // Get references to DOM elements
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadLabel = document.getElementById('uploadLabel');
+        const responseArea = document.getElementById('responseArea');
+        const loader = document.getElementById('loader');
+        const secretCode = document.getElementById('secretCode');
+        
+        // Modal elements
+        const successModal = document.getElementById('successModal');
+        const errorModal = document.getElementById('errorModal');
+        const successModalClose = document.getElementById('successModalClose');
+        const errorModalClose = document.getElementById('errorModalClose');
+        const tryAgainButton = document.getElementById('tryAgainButton');
+        const continueButton = document.getElementById('continueButton');
+        const modalCode = document.getElementById('modalCode');
+        
+        // Set the continuation URL - replace with your target website
+        const continuationUrl = "https://www.google.com"; // Change this to your next clue URL
+        
+        // Event listeners for modals
+        successModalClose.addEventListener('click', closeSuccessModal);
+        errorModalClose.addEventListener('click', closeErrorModal);
+        tryAgainButton.addEventListener('click', closeErrorModal);
+        continueButton.addEventListener('click', redirectToNextClue);
+        
+        function redirectToNextClue() {
+            window.location.href = continuationUrl;
+        }
+        
+        function closeSuccessModal() {
+            successModal.classList.remove('active');
+            // Allow form submission again (for new attempts)
+            uploadLabel.classList.remove('disabled');
+        }
+        
+        function closeErrorModal() {
+            errorModal.classList.remove('active');
+            // Re-enable the upload button
+            uploadLabel.classList.remove('disabled');
+        }
+        
+        function showSuccessModal(code) {
+            modalCode.textContent = code;
+            successModal.classList.add('active');
+        }
+        
+        function showErrorModal() {
+            errorModal.classList.add('active');
+        }
+        
+        // Main image upload handler
+        imageUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Disable the upload button during processing
+                uploadLabel.classList.add('disabled');
+                
+                // Update UI to show loading state
+               
+                responseArea.classList.add('active');
+                loader.classList.add('active');
+                
+                // Get the form and create FormData from it
+                const form = document.getElementById('uploadForm');
+                const formData = new FormData(form);
+                
+                // Send the image to the server
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide the loader
+                    loader.classList.remove('active');
+                    
+                    if (data.status === 'right image') {
+                        // Show success modal with code
+                        showSuccessModal(data.code);
+                    } else {
+                        // Show error modal
+                        showErrorModal();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loader.classList.remove('active');
+                    responseArea.textContent = 'Error processing image. Please try again.';
+                    // Re-enable the upload button
+                    uploadLabel.classList.remove('disabled');
+                });
+                
+                // Clear the file input for future submissions
+                imageUpload.value = '';
+            }
+        });
+    </script>
+</body>
+</html> 

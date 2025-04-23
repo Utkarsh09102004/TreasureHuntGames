@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHIMERA Interface</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin: 10px 0;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+        
+        .chat-container {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            scrollbar-width: thin;
+            scrollbar-color: #555 #333;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-container::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 4px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background-color: #2b3a67;
+            color: #e0e0e0;
+            margin-left: auto;
+            border-top-right-radius: 2px;
+        }
+        
+        .bot-message {
+            background-color: #3a2b67;
+            color: #e0e0e0;
+            margin-right: auto;
+            border-top-left-radius: 2px;
+        }
+        
+        .bot-message::before {
+            content: "CHIMERA";
+            display: block;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #a07eff;
+            letter-spacing: 1px;
+        }
+        
+        .user-message::before {
+            content: "YOU";
+            display: block;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #7eaeff;
+            letter-spacing: 1px;
+        }
+        
+        .input-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        
+        .message-input {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 15px;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: #7e57c2;
+            box-shadow: 0 0 10px rgba(126, 87, 194, 0.3);
+        }
+        
+        .send-button {
+            background-color: #7e57c2;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .send-button:hover {
+            background-color: #9575cd;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .send-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .send-icon {
+            width: 20px;
+            height: 20px;
+            position: relative;
+        }
+        
+        .send-icon::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 2px;
+            width: 16px;
+            height: 1px;
+            background-color: white;
+            transform: rotate(45deg);
+        }
+        
+        .send-icon::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 2px;
+            width: 8px;
+            height: 1px;
+            background-color: white;
+            transform: rotate(-45deg);
+            transform-origin: left;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background-color: rgba(58, 43, 103, 0.7);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            width: fit-content;
+            color: #a07eff;
+            font-style: italic;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background-color: #a07eff;
+            border-radius: 50%;
+            animation: typing 1.5s infinite;
+            margin: 0 2px;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+        
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .redirect-button {
+            background-color: #ff3a3a;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            display: none;
+            box-shadow: 0 5px 15px rgba(255, 58, 58, 0.3);
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        
+        .redirect-button.visible {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 58, 58, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 58, 58, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 58, 58, 0); }
+        }
+        
+        .redirect-button:hover {
+            background-color: #e03535;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255, 58, 58, 0.5);
+        }
+        
+        .redirect-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 10px rgba(255, 58, 58, 0.3);
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            font-style: italic;
+            color: #aaa;
+            text-align: center;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .chat-container {
+                height: 50vh;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">CHIMERA</h1>
+            <div class="subtitle">ENIGMATIC GUARDIAN</div>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                Greetings, seeker. I am CHIMERA, guardian of hidden knowledge. Ask your questions, but know that some secrets I am bound to protect. The path to truth is rarely direct.
+            </div>
+            <!-- Chat messages will be added here dynamically -->
+            <div class="typing-indicator" id="typingIndicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." autofocus>
+            <button class="send-button" id="sendButton">
+                <div class="send-icon"></div>
+            </button>
+        </div>
+        
+        <button class="redirect-button" id="redirectButton">CONTINUE YOUR JOURNEY</button>
+        
+        <div class="status">connection established</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const redirectButton = document.getElementById('redirectButton');
+        
+        // URLs for next stage
+        const nextStageUrl = "/morse/";
+        
+        // Store chat history - only visible messages
+        let chatHistory = [
+            { role: "assistant", content: "Greetings, seeker. I am CHIMERA, guardian of hidden knowledge. Ask your questions, but know that some secrets I am bound to protect. The path to truth is rarely direct." }
+        ];
+        
+        // Send message when send button clicked
+        sendButton.addEventListener('click', sendMessage);
+        
+        // Send message when Enter key pressed
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Redirect to next stage
+        redirectButton.addEventListener('click', function() {
+            window.location.href = nextStageUrl;
+        });
+        
+        // Function to send a message
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === '') return;
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Add user message to chat
+            addMessage('user', message);
+            
+            // Add user message to history
+            chatHistory.push({ role: "user", content: message });
+            
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+            
+            // Scroll to bottom of chat
+            scrollToBottom();
+            
+            try {
+                // Send message to server
+                const response = await fetch('/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify({ messages: chatHistory })
+                });
+                
+                const data = await response.json();
+                
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                // Add bot response to chat
+                addMessage('bot', data.message);
+                
+                // Add bot response to history
+                chatHistory.push({ role: "assistant", content: data.message });
+                
+                // Check if solution was found (based on server response)
+                if (data.solution_found) {
+                    // Show redirect button
+                    redirectButton.classList.add('visible');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.style.display = 'none';
+                addMessage('bot', 'I seem to be experiencing a temporary disruption in my connection. Please try again.');
+            }
+        }
+        
+        // Function to add a message to the chat
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            messageDiv.textContent = content;
+            
+            // Insert before typing indicator
+            chatContainer.insertBefore(messageDiv, typingIndicator);
+            
+            // Scroll to bottom of chat
+            scrollToBottom();
+        }
+        
+        // Function to scroll to bottom of chat
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Function to get CSRF token
+        function getCsrfToken() {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return cookieValue || '';
+        }
+        
+        // Focus on input field when page loads
+        window.addEventListener('load', function() {
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Transmission</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        
+        .morse-container {
+            max-width: 320px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin-bottom: 50px;
+        }
+        
+        .blinker {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 30px auto;
+            background-color: #333;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .blinker.dot {
+            background-color: #ff3a3a;
+            box-shadow: 0 0 40px rgba(255, 58, 58, 0.7);
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .blinker.dash {
+            background-color: #ff3a3a;
+            box-shadow: 0 0 40px rgba(255, 58, 58, 0.7);
+            border-radius: 30px;
+            width: 240px;
+            height: 80px;
+        }
+        
+        .current-symbol {
+            font-size: 3rem;
+            font-weight: bold;
+            height: 60px;
+            margin: 10px 0;
+            color: #ff3a3a;
+            text-shadow: 0 0 10px rgba(255, 58, 58, 0.7);
+        }
+        
+        .letter-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 20px auto;
+            max-width: 80%;
+        }
+        
+        .letter-box {
+            width: 15px;
+            height: 15px;
+            background-color: #333;
+            margin: 0 5px;
+            border-radius: 3px;
+        }
+        
+        .letter-box.active {
+            background-color: #3a9fff;
+            box-shadow: 0 0 10px rgba(58, 159, 255, 0.7);
+        }
+        
+        .letter-box.space {
+            background-color: #444;
+            width: 30px;
+        }
+        
+        .replay-button {
+            background-color: #333;
+            color: #e0e0e0;
+            border: none;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .replay-button:hover {
+            background-color: #444;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .replay-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .replay-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            color: #777;
+            font-size: 0.8rem;
+        }
+        
+        .speed-control input {
+            margin: 0 10px;
+            width: 120px;
+        }
+        
+        .status {
+            margin-top: 30px;
+            font-size: 1.2rem;
+            opacity: 0.7;
+            font-style: italic;
+            color: #aaa;
+            position: relative;
+        }
+        
+        .status::after {
+            content: "";
+            position: absolute;
+            right: -15px;
+            bottom: 5px;
+            width: 10px;
+            height: 10px;
+            background-color: #ff3a3a;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #777;
+            max-width: 80%;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="morse-container">
+        <div class="title">TRANSMISSION</div>
+        
+        <div class="blinker" id="blinker"></div>
+        <div class="current-symbol" id="currentSymbol"></div>
+        
+        <!-- Visual letter indicator -->
+        <div class="letter-indicator" id="letterIndicator">
+            <!-- Letter boxes will be added dynamically -->
+        </div>
+        
+        <div class="speed-control">
+            <span>SLOWER</span>
+            <input type="range" id="speedControl" min="0.5" max="2" step="0.25" value="1">
+            <span>FASTER</span>
+        </div>
+        
+        <button class="replay-button" id="replayButton">
+            REPLAY TRANSMISSION
+        </button>
+        
+        <div class="status">transmission receiving</div>
+        
+        <div class="instructions">
+            (|) indicates a space between letters)<br>
+            (//) indicates a space between words<br>
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const blinker = document.getElementById('blinker');
+        const currentSymbol = document.getElementById('currentSymbol');
+        const replayButton = document.getElementById('replayButton');
+        const speedControl = document.getElementById('speedControl');
+        const letterIndicator = document.getElementById('letterIndicator');
+        
+        // Create audio context for beeps
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Base Morse code timing (in milliseconds)
+        const BASE_DOT_DURATION = 300; // slower default speed
+        let speedFactor = parseFloat(speedControl.value);
+        
+        // Calculate actual timing based on speed factor
+        let DOT_DURATION = BASE_DOT_DURATION / speedFactor;
+        let DASH_DURATION = DOT_DURATION * 3;
+        let SYMBOL_SPACE = DOT_DURATION;
+        let LETTER_SPACE = DOT_DURATION * 3;
+        let WORD_SPACE = DOT_DURATION * 7;
+        
+        // Message to transmit in Morse: "end begins"
+        // e (.) n (-.) d (-..) space (-...) b (-...) e (.) g (--..) i (..) n (-.) s (...)
+        const morseMessage = ". -. -.. / -... . --. .. -. ...";
+        
+        // Parse morse code to determine letter positions
+        const letterPositions = [];
+        let currentPosition = 0;
+        
+        // Parse the morse message to find letter boundaries
+        morseMessage.split('').forEach(char => {
+            if (char === ' ') {
+                letterPositions.push(currentPosition);
+            } else if (char === '/') {
+                letterPositions.push(currentPosition);
+                letterPositions.push(currentPosition); // Double mark for word space
+            }
+            currentPosition++;
+        });
+        
+        // Flag to track if a sequence is currently playing
+        let isPlaying = false;
+        // Variable to store the timeout ID for cancellation
+        let currentTimeout = null;
+        
+        // Generate beep sound
+        function createBeep() {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.5;
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            return { oscillator, gainNode };
+        }
+        
+        // Play a beep sound
+        function playBeep(duration) {
+            const { oscillator, gainNode } = createBeep();
+            
+            const currentTime = audioContext.currentTime;
+            oscillator.start(currentTime);
+            
+            // Apply fade in/out to avoid clicks
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(0.5, currentTime + duration - 0.01);
+            gainNode.gain.linearRampToValueAtTime(0, currentTime + duration);
+            
+            oscillator.stop(currentTime + duration + 0.01);
+        }
+        
+        // Helper function for controlled timeouts that can be canceled
+        function setControlledTimeout(callback, delay) {
+            currentTimeout = setTimeout(callback, delay);
+            return currentTimeout;
+        }
+        
+        // Stop any ongoing transmission
+        function stopTransmission() {
+            if (currentTimeout) {
+                clearTimeout(currentTimeout);
+                currentTimeout = null;
+            }
+            isPlaying = false;
+            blinker.className = 'blinker';
+            currentSymbol.textContent = '';
+            
+            // Reset letter indicators
+            letterIndicator.innerHTML = '';
+        }
+        
+        // Create letter indicators based on message length
+        function createLetterIndicators() {
+            letterIndicator.innerHTML = '';
+            
+            const totalLetters = morseMessage.split('/').join('').split(' ').filter(Boolean).length;
+            
+            for (let i = 0; i < totalLetters; i++) {
+                const box = document.createElement('div');
+                box.className = 'letter-box';
+                box.id = `letter-box-${i}`;
+                letterIndicator.appendChild(box);
+                
+                // Add space after each letter except the last one
+                if (i < totalLetters - 1) {
+                    const spacer = document.createElement('div');
+                    spacer.className = 'letter-box';
+                    letterIndicator.appendChild(spacer);
+                }
+            }
+        }
+        
+        // Update timing variables based on speed factor
+        function updateTimings() {
+            speedFactor = parseFloat(speedControl.value);
+            DOT_DURATION = BASE_DOT_DURATION / speedFactor;
+            DASH_DURATION = DOT_DURATION * 3;
+            SYMBOL_SPACE = DOT_DURATION;
+            LETTER_SPACE = DOT_DURATION * 3;
+            WORD_SPACE = DOT_DURATION * 7;
+        }
+        
+        // Display the morse code and animate the blinker
+        async function playMorseSequence() {
+            // Reset the state
+            blinker.className = 'blinker';
+            currentSymbol.textContent = '';
+            isPlaying = true;
+            
+            // Create letter indicators
+            createLetterIndicators();
+            
+            // Split the morse message into individual characters
+            const characters = morseMessage.split('');
+            let currentLetterIndex = 0;
+            let isNewLetter = true;
+            
+            for (let i = 0; i < characters.length && isPlaying; i++) {
+                const char = characters[i];
+                
+                // Track letter changes
+                if (letterPositions.includes(i)) {
+                    currentLetterIndex++;
+                    isNewLetter = true;
+                    
+                    // Highlight the current letter box
+                    const letterBox = document.getElementById(`letter-box-${currentLetterIndex}`);
+                    if (letterBox) {
+                        // Remove active from all
+                        document.querySelectorAll('.letter-box').forEach(box => box.classList.remove('active'));
+                        // Set this one active
+                        letterBox.classList.add('active');
+                    }
+                }
+                
+                if (char === '.') {
+                    // Animate dot
+                    blinker.className = 'blinker dot';
+                    currentSymbol.textContent = '.';
+                    playBeep(DOT_DURATION / 1000);
+                    await new Promise(resolve => setControlledTimeout(resolve, DOT_DURATION));
+                    blinker.className = 'blinker';
+                    currentSymbol.textContent = '';
+                    await new Promise(resolve => setControlledTimeout(resolve, SYMBOL_SPACE));
+                } 
+                else if (char === '-') {
+                    // Animate dash - change shape to a dash
+                    blinker.className = 'blinker dash';
+                    currentSymbol.textContent = '-';
+                    playBeep(DASH_DURATION / 1000);
+                    await new Promise(resolve => setControlledTimeout(resolve, DASH_DURATION));
+                    blinker.className = 'blinker';
+                    currentSymbol.textContent = '';
+                    await new Promise(resolve => setControlledTimeout(resolve, SYMBOL_SPACE));
+                } 
+                else if (char === ' ') {
+                    // Space between characters
+                    currentSymbol.textContent = '|'; // Visual indicator for letter separation
+                    await new Promise(resolve => setControlledTimeout(resolve, LETTER_SPACE));
+                    currentSymbol.textContent = '';
+                } 
+                else if (char === '/') {
+                    // Space between words
+                    currentSymbol.textContent = '//';
+                    await new Promise(resolve => setControlledTimeout(resolve, WORD_SPACE));
+                    currentSymbol.textContent = '';
+                }
+            }
+            
+            isPlaying = false;
+        }
+        
+        // Event listener for replay button
+        replayButton.addEventListener('click', function() {
+            // Request audio context unlock (needed for some browsers)
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Stop any ongoing transmission
+            stopTransmission();
+            
+            // Update timings based on current speed
+            updateTimings();
+            
+            // Disable button during playback
+            replayButton.disabled = true;
+            replayButton.style.opacity = '0.5';
+            
+            // Play the morse sequence
+            playMorseSequence().then(() => {
+                // Re-enable button when done
+                replayButton.disabled = false;
+                replayButton.style.opacity = '1';
+            });
+        });
+        
+        // Event listener for speed control
+        speedControl.addEventListener('input', function() {
+            // Only update if not currently playing
+            if (!isPlaying) {
+                updateTimings();
+            }
+        });
+        
+        // Auto-play when page loads (after a short delay)
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                replayButton.click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
